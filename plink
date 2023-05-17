@@ -1,0 +1,6 @@
+LODNA HLA
+/well/todd/users/xnc303/plink2 --bfile /well/todd/users/xnc303/ukbb/imputed/eur_hla_prot --pheno /well/todd/users/xnc303/ukbb/olink/pheno_lodna --covar /well/todd/users/xnc303/ukbb/olink/cov3_pc10  --glm --covar-col-nums 4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19 --maf 0.01 --geno 0.1 --hwe 0.00000001 --covar-variance-standardize --out hla 
+
+LODNA CHR6
+
+/well/todd/users/xnc303/plink2 --bfile /well/todd/users/xnc303/ukbb/imputed/merged_chr6 --pheno /well/todd/users/xnc303/ukbb/olink/pheno_lodna --covar /well/todd/users/xnc303/ukbb/olink/cov3_pc10 --keep /well/todd/users/xnc303/ukbb/olink/prot_eur_tokeep --glm --covar-col-nums 4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19 --maf 0.01 --geno 0.1 --hwe 0.00000001 --covar-variance-standardize --out hla 
