@@ -64,15 +64,14 @@ BiobankC[match(fam2[,1],BiobankC[,1]),]->eurC
 BiobankA[match(fam2[,1],BiobankA[,1]),]->eurA
 eurC$genetic_sex_f22001_0_0 ->eur_sex
 eurA$age_at_recruitment_f21022_0_0 -> eur_age
-cbind(eurC$genetic_principal_components_f22009_0_1,eurC$genetic_principal_components_f22009_0_2,eurC$genetic_principal_components_f22009_0_3,eurC$genetic_principal_components_f22009_0_4,eurC$genetic_principal_components_f22009_0_5)->eur_pcs
+cbind(eurC$genetic_principal_components_f22009_0_1,eurC$genetic_principal_components_f22009_0_2,eurC$genetic_principal_components_f22009_0_3,eurC$genetic_principal_components_f22009_0_4,eurC$genetic_principal_components_f22009_0_5,eurC$genetic_principal_components_f22009_0_6,eurC$genetic_principal_components_f22009_0_7,eurC$genetic_principal_components_f22009_0_8,eurC$genetic_principal_components_f22009_0_9,eurC$genetic_principal_components_f22009_0_10)->eur_pcs
 data.frame(proteur[,1],proteur[,(ncol(proteur)-2):(ncol(proteur)-1)],paste("B",proteur[,ncol(proteur)],sep=""),eur_sex,eur_age,eur_pcs)->cov
 colnames(cov)<-c("plate","number_prot","well_prot","batch","sex","age","PC1","PC2","PC3","PC4","PC5")
 
 data.frame(proteur[,1],paste("B",proteur[,ncol(proteur)],sep=""),eur_sex,eur_age,eur_pcs,res2$x[,1:3])->cov2
-colnames(cov2)<-c("plate","batch","sex","age","PC1","PC2","PC3","PC4","PC5","PPC1","PPC2","PPC3")
+colnames(cov2)<-c("plate","batch","sex","age","PC1","PC2","PC3","PC4","PC5","PC6","PC7","PC8","PC9","PC10","PPC1","PPC2","PPC3")
 cbind(fam2[,1:2],cov2)->cov3
-write.table(cov3,file="cov3",quote=F,col.names=F,row.names=F)
-
+write.table(cov3,file="cov3_pc10",quote=F,col.names=F,row.names=F)
 
 read.table("/well/todd/users/xnc303/ukbb/imputed/eur_hla_prot.fam")->fam2
 res$x[match(fam2[,2],protall[,2]),]->resxsmall
