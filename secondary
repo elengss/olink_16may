@@ -1,0 +1,20 @@
+
+read.delim("/well/todd/users/xnc303/ukbb/imputed/eur_hla_prot.vcf",skip=6)->x
+x[,10:ncol(x)]->x2
+sapply(strsplit(colnames(x2),"_"),"[[",2)->y
+read.table("cov3_pc10",header=F)->pheno
+rownames(x2)<-x$ID
+colnames(x2)<-y
+x2[,match(pheno[,2],y)]->x3
+pheno[,3:ncol(pheno)]->pheno2
+x3["HLA_C*07:02",]->test
+test->test2
+test2[which(test=="0/0")]<-0
+test2[which(test=="0/1")]<-1
+test2[which(test=="1/1")]<-2
+unlist(test2)->test3
+cbind(pheno,test3)->cov
+write.table(cov,file="cov3_HLA_C*07:02",col.names=F,row.names=F,quote=F)
+
+
+/well/todd/users/xnc303/plink2 --bfile /well/todd/users/xnc303/ukbb/imputed/eur_hla_prot --pheno /well/todd/users/xnc303/ukbb/olink/pheno --covar /well/todd/users/xnc303/ukbb/olink/cov3_HLA_C*07:02  --glm --covar-col-nums 4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20 --maf 0.01 --geno 0.1 --hwe 0.00000001 --covar-variance-standardize --out hla
