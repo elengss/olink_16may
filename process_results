@@ -34,3 +34,16 @@ pdf(paste(bmo0$ID[i],"_",prot[i],".pdf",sep=""))
 boxplot(phen[which(test=="0/0")],phen[which(test=="0/1")],phen[which(test=="1/1")])
 dev.off()
 print(i)}
+
+
+
+load("bmo.Rd")
+sapply(strsplit(bmo[,1],"\\."),"[[",2)->bmo[,1]
+read.table("/well/todd/users/xnc303/ukbb/imputed/eur_hla_prot.afreq",header=F)->fr
+bmo$P*nrow(bmo)->adjp
+cbind(bmo,adjp)->bmonew
+fr[match(bmonew[,"ID"],fr$V2),"V5"]->af
+cbind(bmonew,af)->bmo3
+bmo3[which(adjp<0.001),]->bmo4
+unique(bmo4[,1])->prot
+bmo4[match(prot,bmo4[,1]),]->bmou
