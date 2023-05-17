@@ -1,0 +1,21 @@
+read.table("header")->header
+ls *linear > allfiles
+bigmat<-matrix(nrow=0,ncol=14)
+read.table("allfiles",header=F)->af
+read.table("header")->h
+for(i in 1:nrow(af)){
+read.table(af[i,],header=F)->x
+colnames(x)<-h[1,]
+x[which(x$TEST=="ADD"),]->x2
+rbind(bigmat,cbind(rep(af[i,1],nrow(x2)),x2))->bigmat
+print(i)
+}
+
+bigmat[order(as.numeric(bigmat$P)),]->bmo
+save(bmo,file="bmo.Rd")
+
+bmo[which(bmo$ID=="HLA_A*01"),]->bmo2
+library(qqman)
+pdf("HLA_A*01.pdf")
+qq(bmo2$P)
+dev.off()
