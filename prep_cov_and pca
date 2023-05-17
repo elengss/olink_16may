@@ -1,0 +1,89 @@
+
+library(data.table)
+olink.bat <- fread("olink_batch_number.dat")
+olink.instance0 <- read.table("olink_instance_0.csv",sep=",",header=T) # npx table
+olink.instance2 <- read.table("olink_instance_2.csv",sep=",",header=T)
+olink.instance3 <- read.table("olink_instance_3.csv",sep=",",header=T)
+olink.tec <- fread("match.tsv")
+colnames(olink.tec)<-c("eid","num.prot.0","plate.prot.0","well.prot.0","num.prot.2","plate.prot.2","well.prot.2","num.prot.3","plate.prot.3","well.prot.3")
+
+olink.instance0 <- merge(olink.instance0, olink.tec[, c("eid", "num.prot.0", "plate.prot.0", "well.prot.0")], by="eid")
+olink.instance0 <- merge(olink.instance0, olink.bat, by.x="plate.prot.0", by.y="PlateID")
+
+olink.instance2 <- merge(olink.instance2, olink.tec[, c("eid", "num.prot.2", "plate.prot.2", "well.prot.2")], by="eid")
+olink.instance2 <- merge(olink.instance2, olink.bat, by.x="plate.prot.2", by.y="PlateID")
+
+olink.instance3 <- merge(olink.instance3, olink.tec[, c("eid", "num.prot.3", "plate.prot.3", "well.prot.3")], by="eid")
+olink.instance3 <- merge(olink.instance3, olink.bat, by.x="plate.prot.3", by.y="PlateID")
+
+
+##### harmonise the tables
+
+olink.instance0[,3:(ncol(olink.instance0)-3)]->prot1
+olink.instance2[,3:(ncol(olink.instance0)-3)]->prot2
+olink.instance3[,3:(ncol(olink.instance0)-3)]->prot3
+
+intersect(intersect(colnames(prot1),colnames(prot2)),colnames(prot3))->inter
+prot1[,match(inter,colnames(prot1))]->prot1m
+prot2[,match(inter,colnames(prot2))]->prot2m
+prot3[,match(inter,colnames(prot3))]->prot3m
+
+paste("i0_",olink.instance0[,1],sep="")->n1
+paste("i2_",olink.instance2[,1],sep="")->n2
+paste("i3_",olink.instance3[,1],sep="")->n3
+
+
+cbind(n1,olink.instance0[,2],prot1m,olink.instance0[,(ncol(olink.instance0)-2):ncol(olink.instance0)])->prot1s
+cbind(n2,olink.instance2[,2],prot2m,olink.instance2[,(ncol(olink.instance2)-2):ncol(olink.instance2)])->prot2s
+cbind(n3,olink.instance3[,2],prot3m,olink.instance3[,(ncol(olink.instance3)-2):ncol(olink.instance3)])->prot3s
+
+colnames(prot1s)->colnames(prot2s)
+colnames(prot1s)->colnames(prot3s)
+rbind(prot1s,prot2s,prot3s)->protall
+
+protall[,3:(ncol(protall)-3)]->protsmall
+
+protsmall->protsmalli
+for(i in 1:ncol(protsmall)){
+mean(as.numeric(protsmall[,i]),na.rm=T)->protsmalli[which(is.na(protsmalli[,i])==T),i]
+print(i)
+}
+
+prcomp(protsmalli,center=T,scale=T)->res
+save(res,file="res.Rd")
+
+protsmalli[match(fam[,2],protall)]
+
+### do res$x vs batch, plate, number detected, age, sex
+
+
+read.table("/well/todd/users/xnc303/ukbb/imputed/eur_hla_prot.fam")->fam2
+protall[match(fam2[,1],protall[,2]),]->proteur
+load("/well/todd/users/xnc303/ukbb/allbiobank.RData")
+BiobankC[match(fam2[,1],BiobankC[,1]),]->eurC
+BiobankA[match(fam2[,1],BiobankA[,1]),]->eurA
+eurC$genetic_sex_f22001_0_0 ->eur_sex
+eurA$age_at_recruitment_f21022_0_0 -> eur_age
+cbind(eurC$genetic_principal_components_f22009_0_1,eurC$genetic_principal_components_f22009_0_2,eurC$genetic_principal_components_f22009_0_3,eurC$genetic_principal_components_f22009_0_4,eurC$genetic_principal_components_f22009_0_5)->eur_pcs
+data.frame(proteur[,1],proteur[,(ncol(proteur)-2):(ncol(proteur)-1)],paste("B",proteur[,ncol(proteur)],sep=""),eur_sex,eur_age,eur_pcs)->cov
+colnames(cov)<-c("plate","number_prot","well_prot","batch","sex","age","PC1","PC2","PC3","PC4","PC5")
+
+data.frame(proteur[,1],paste("B",proteur[,ncol(proteur)],sep=""),eur_sex,eur_age,eur_pcs,res2$x[,1:3])->cov2
+colnames(cov2)<-c("plate","batch","sex","age","PC1","PC2","PC3","PC4","PC5","PPC1","PPC2","PPC3")
+cbind(fam2[,1:2],cov2)->cov3
+write.table(cov3,file="cov3",quote=F,col.names=F,row.names=F)
+
+
+read.table("/well/todd/users/xnc303/ukbb/imputed/eur_hla_prot.fam")->fam2
+res$x[match(fam2[,2],protall[,2]),]->resxsmall
+res->res2
+resxsmall->res2$x
+
+library(ggfortify)
+iris.pca <- res2
+autoplot(iris.pca,data = cov,colour = 'sex') -> ap
+ggsave(ap,filename="pca_sex.png",type=cairo)
+autoplot(iris.pca,data = cov,colour = 'batch') -> ap
+ggsave(ap,filename="pca_batch.png",type=cairo)
+autoplot(iris.pca,data = cov,colour = 'age') -> ap
+ggsave(ap,filename="pca_age.png",type=cairo)
