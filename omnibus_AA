@@ -1,0 +1,102 @@
+omnibus olink
+
+grep AA merged_chr6.vcf > aa_chr6.vcf
+grep "#" merged_chr6.vcf | tail -1  > chr6.vcf.id
+tail -1 hash > chr6.vcf.id
+
+
+grep AA merged_chr6.bim > merged_chr6.aa.bim
+awk '{print $2}' merged_chr6.aa.bim > keepaa
+
+plink2 --vcf merged_chr6.vcf dosage=DS --exclude-if-info "R2<0.95" --extract keepaa --recode vcf --out filtered_aa
+
+plink2 --vcf filtered_aa.vcf --make-bed --out filtered_aa
+read.table("filtered_aa.fam",header=F)->aa
+sapply(strsplit(aa[,2],"_"),"[[",1)->id
+id->aa[,1]
+id->aa[,2]
+write.table(aa,file="filtered_aa.fam",col.names=F,row.names=F,quote=F)
+
+plink2 --bfile filtered_aa --keep /well/todd/users/xnc303/ukbb/olink/prot_eur_tokeep --recode vcf --out filtered_aa_eur_prot
+read.delim("filtered_aa_eur_prot.vcf",skip=6)->x
+x[,10:ncol(x)]->x2
+sapply(strsplit(colnames(x2),"_"),"[[",2)->id
+read.table("/well/todd/users/xnc303/ukbb/olink/pheno_lodna",header=T)->pheno
+x2[,match(pheno[,2],id)]->x3
+x3->x4
+for(i in 1:nrow(x3)){
+gsub("0/0",0,x3[i,])->tmp
+gsub("0/1",1,tmp)->tmp2
+gsub("1/1",2,tmp2)->x4[i,]
+print(i)}
+rownames(x4)<-x$ID
+colnames(x4)<-id
+x4->dosage
+save(dosage,file="dosage_eur_aa.Rd")
+
+load("/well/todd/users/xnc303/ukbb/imputed/dosage_eur_aa.Rd")
+apply(dosage,2,as.numeric)->dosage2
+rownames(dosage)->rownames(dosage2)
+colnames(dosage)->colnames(dosage2)
+dosage2[which(rowSums(dosage2,na.rm=T)!=0),]->dosage3
+dosage3->dosage
+save(dosage,file="/well/todd/users/xnc303/ukbb/imputed/dosage_eur_aa_short.Rd")
+
+##### subsequent file is
+
+
+load("/well/todd/users/xnc303/ukbb/imputed/dosage_eur_aa_short.Rd")
+sapply(strsplit(rownames(dosage),"_"),"[",4)->pos
+read.table("/well/todd/users/xnc303/ukbb/olink/pheno_lodna",header=T)->pheno
+read.table("/well/todd/users/xnc303/ukbb/olink/cov3_pc10",header=F)->cov
+pheno[,3:ncol(pheno)]->pheno2
+cov[,3:ncol(cov)]->cov2
+
+pheno2[,zzz]->temp
+
+vector()->pv
+unique(pos)->upos
+matrix(nrow=length(upos),ncol=4)->lmmat
+
+for(i in 1:length(upos)){try({
+which(pos==upos[i])->idx
+if(length(idx)==1){
+dosage[idx,]->dos2
+data.frame(temp,dos2,cov2)->cov3
+na.omit(cov3)->cov4
+if(sum(cov4[,2],na.rm=T)!=0){
+lm(cov4[,1]~cov4[,2]+V4+V5+V6+V7+V9+V10+V11+V12+V13+V14+V15+V16+V17+V18+V19,data=cov4)->res1
+lm(cov4[,1]~V4+V5+V6+V7+V9+V10+V11+V12+V13+V14+V15+V16+V17+V18+V19,data=cov4)->res2
+summary(res1)$coeff[2,]->lmmat[i,]
+anova(res2,res1)->ano
+ano[["Pr(>F)"]][[2]]->pv[i]}} else {
+dosage[idx,]->dos2
+dos2[-which(rowSums(dos2,na.rm=T)==max(rowSums(dos2,na.rm=T))),]->dos3
+if(length(dos3)==nrow(cov2)){
+data.frame(temp,dos3,cov2)->cov3
+na.omit(cov3)->cov4
+if(sum(cov4[,2],na.rm=T)!=0){
+lm(cov4[,1]~cov4[,2]+V4+V5+V6+V7+V9+V10+V11+V12+V13+V14+V15+V16+V17+V18+V19,data=cov4)->res1
+lm(cov4[,1]~V4+V5+V6+V7+V9+V10+V11+V12+V13+V14+V15+V16+V17+V18+V19,data=cov4)->res2
+summary(res1)$coeff[2,]->lmmat[i,]
+anova(res2,res1)->ano
+ano[["Pr(>F)"]][[2]]->pv[i]}} else{
+data.frame(temp,t(dos3),cov2)->cov3
+na.omit(cov3)->cov4
+if(sum(cov4[,2],na.rm=T)!=0){
+lm(cov4[,1]~as.matrix(cov4[,2:(nrow(dos3)+1)])+V4+V5+V6+V7+V9+V10+V11+V12+V13+V14+V15+V16+V17+V18+V19,data=cov4)->res1
+lm(cov4[,1]~V4+V5+V6+V7+V9+V10+V11+V12+V13+V14+V15+V16+V17+V18+V19,data=cov4)->res2
+summary(res1)$coeff[2,]->lmmat[i,]
+anova(res2,res1)->ano
+ano[["Pr(>F)"]][[2]]->pv[i]}
+}
+}
+print(i)})
+}
+
+#### not need to transpose matrix if not column
+
+upos->rownames(lmmat)
+c("est","se","z","p")->colnames(lmmat)
+save(lmmat,file="zzz.lmmat.Rd")
+save(pv,file="zzz.pv.Rd")
