@@ -1,0 +1,30 @@
+##### do dosage vcf
+
+plink2 --bfile eur_hla_prot --recode vcf --out eur_hla_prot
+read.delim("eur_hla_prot.vcf",skip=6)->x
+x[,10:ncol(x)]->x2
+sapply(strsplit(colnames(x2),"_"),"[[",2)->id
+read.table("/well/todd/users/xnc303/ukbb/olink/pheno_lodna",header=T)->pheno
+x2[,match(pheno[,2],id)]->x3
+x3->x4
+for(i in 1:nrow(x3)){
+gsub("0/0",0,x3[i,])->tmp
+gsub("0/1",1,tmp)->tmp2
+gsub("1/1",2,tmp2)->x4[i,]
+print(i)}
+rownames(x4)<-x$ID
+colnames(x4)<-id
+x4->dosage
+save(dosage,file="dosage_eur.Rd")
+
+#### troubleshoot HLA C 0702
+
+load("/well/todd/users/xnc303/ukbb/imputed/dosage_eur.Rd")
+read.table("/well/todd/users/xnc303/ukbb/olink/pheno_lodna",header=T)->pheno
+read.table("/well/todd/users/xnc303/ukbb/olink/cov3_pc10",header=F)->cov
+
+pheno[,"kir2dl3"]->kir
+unlist(dosage["HLA_C*07:02",])->test0702
+unlist(dosage["HLA_C*07",])->test07
+cov[,4:ncol(cov)]->cov3
+lm(kir~test07+test0702+V4+V5+V6+V7+V8+V9+V10+V11+V12+V13+V14+V15+V16+V17+V18+V19,data=cov3)->test
