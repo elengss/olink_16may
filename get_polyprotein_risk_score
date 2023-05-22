@@ -1,0 +1,73 @@
+#### do polygenic risk score - also in do_prs.R in each folder #### note different from DM1/DM2/RA than rest because it is 1/0 rather than NA
+
+
+
+load("zzz.Rd")
+read.table("/well/todd/users/xnc303/ukbb/olink/pheno_lodna",header=T)->pheno
+pheno[,3:ncol(pheno)]->pheno2
+colnames(pheno2)->rownames(lmmat)
+lmmat[order(as.numeric(lmmat[,4])),]->lmmat2
+lmmat2[which(lmmat2[,4]<(0.000000001/1266)),]->lmmat3
+#### make a prs
+rownames(lmmat3)->rn
+pheno2[,match(rn,colnames(pheno2))]->pheno3
+###impute pheno3
+pheno3->pheno4
+for(i in 1:ncol(pheno3)){
+pheno4[which(is.na(pheno3[,i])==T),i]<-mean(pheno3[,i],na.rm=T)
+}
+
+#### special for RA
+load("/well/todd/users/xnc303/ukbb/ra2.Rd")
+ra2->cd2
+cd2[match(pheno[,2],cd2[,1]),]->cd3
+cdpheno<-cd3[,2]
+
+#### this is for UC
+load("/well/todd/users/xnc303/ukbb/uc2.Rd")
+uc2->cd2
+cd2[match(pheno[,2],cd2[,1]),]->cd3
+cdpheno<-rep(0,nrow(cd3))
+cdpheno[which(is.na(cd3[,2])==F)]<-1
+
+
+read.table("/well/todd/users/xnc303/ukbb/olink/cov3_pc10",header=F)->cov
+cov[,4:ncol(cov)]->cov2
+cbind(pheno4,cov2)->cov3
+
+glm(cdpheno ~ V4+V5+V6+V7+V8+V9+V10+V11+V12+V13+V14+V15+V16+V17+V18+V19,family=binomial(link=logit),data=cov3) -> forresid
+
+fit <- glmnet(pheno4, forresid$residuals)
+cvfit <- cv.glmnet(as.matrix(pheno4), forresid$residuals)
+coef(fit,s=cvfit$lambda.min)
+predict(fit, newx = as.matrix(pheno4), s=cvfit$lambda.min)->pred
+pdf("boxplot_prs.pdf")
+boxplot(pred[which(cdpheno==0)],pred[which(cdpheno==1)])
+dev.off()
+
+model = glm(cdpheno~pred , family="binomial") 
+test_prob = predict(model, as.data.frame(pred), type = "response")
+test_roc = roc(cdpheno ~ test_prob, plot = TRUE, print.auc = TRUE)
+pdf("roc_prs.pdf")
+plot(test_roc ,main ="ROC curve -- Logistic Regression ")
+dev.off()
+
+load("/well/todd/users/xnc303/ukbb/prs.Rd")
+#### THIS IS FOR RA
+### enhanced
+prs[,grep("26274",colnames(prs))]->grs
+grs[match(pheno[,2],prs[,1])]->grs2
+#### standard
+prs[,grep("26273",colnames(prs))]->grs
+grs[match(pheno[,2],prs[,1])]->grs3
+pdf("grs_vs_prs.pdf")
+plot(grs3,pred)
+dev.off()
+
+grs3+pred->pgrs
+model = glm(cdpheno~pgrs , family="binomial") 
+test_prob = predict(model, as.data.frame(pgrs), type = "response")
+test_roc = roc(cdpheno ~ test_prob, plot = TRUE, print.auc = TRUE)
+pdf("roc_prsgrs.pdf")
+plot(test_roc ,main ="ROC curve -- Logistic Regression ")
+dev.off()
