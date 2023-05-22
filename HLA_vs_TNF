@@ -1,0 +1,30 @@
+
+
+##### TRY HLA AND TNF
+
+
+dosage["HLA_DQA1*03",]->test
+read.table("/well/todd/users/xnc303/ukbb/olink/cov3_pc10",header=F)->cov
+read.table("/well/todd/users/xnc303/ukbb/olink/pheno_lodna",header=T)->pheno
+pheno[,"tnf"]->tnf
+read.table("/well/todd/users/xnc303/ukbb/disease/RA/pheno_fp",header=T)->fp
+cov[,4:ncol(cov)]->cov2
+as.data.frame(cov2)->cov3
+data.frame((fp[,3]-1),as.numeric(unlist(test)),tnf,cov3)->cov4
+na.omit(cov4)->cov5
+colnames(cov5)[1:2]<-c("dis","hla")
+glm(cov5[,1]~tnf+hla+V4+V5+V6+V7+V8+V9+V10+V11+V12+V13+V14+V15+V16+V17+V18+V19,data=cov5,family=binomial(link=logit))->test
+glm(cov5[,1]~tnf+V4+V5+V6+V7+V8+V9+V10+V11+V12+V13+V14+V15+V16+V17+V18+V19,data=cov5,family=binomial(link=logit))->test0
+anova(test0,test,test="Chisq")[["Pr(>Chi)"]][2]
+
+##### boxplot TNF vs RA
+
+pdf("tnf_ra_boxplot.pdf")
+boxplot(tnf[which(fp[,3]==1)],tnf[which(fp[,3]==2)])
+dev.off()
+
+dosage["HLA_DQA1*03",]->hla
+unlist(hla)->hla
+pdf("tnf_hla_boxplot.pdf")
+boxplot(tnf[which(hla==0)],tnf[which(hla==1)],tnf[which(hla==2)])
+dev.off()
