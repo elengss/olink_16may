@@ -1,0 +1,75 @@
+
+load("bmo.Rd")
+sapply(strsplit(bmo$ID,"\\*"),"[[",2)->digit
+bmo[which(nchar(digit)==2),]->bmo2
+bmo2[which(bmo2[,13]<(10^(-200))),]->bmo3
+
+unique(bmo3$ID)->hlaid
+unique(bmo3[,1])->protid
+
+matrix(nrow=length(hlaid),ncol=length(protid))->betamat
+matrix(nrow=length(hlaid),ncol=length(protid))->pmat
+for(i in 1:length(hlaid)){
+for(j in 1:length(protid)){
+bmo[which(bmo$ID==hlaid[i]),]->bmo2
+bmo2[which(bmo2[,1]==protid[j]),"P"]->pmat[i,j]
+bmo2[which(bmo2[,1]==protid[j]),"BETA"]->betamat[i,j]
+}
+print(i)
+}
+
+colnames(pmat)<-sapply(strsplit(protid,"\\."),"[[",2)
+rownames(pmat)<-hlaid
+colnames(betamat)<-sapply(strsplit(protid,"\\."),"[[",2)
+rownames(betamat)<-hlaid
+
+pmat[which(pmat==0)]<-10^(-300)
+
+pdf("heatmap_pvalue.pdf")
+heatmap(t(-log10(pmat)),scale="none")
+dev.off()
+
+pdf("heatmap_beta.pdf")
+heatmap(betamat,scale="none")
+dev.off()
+
+sapply(strsplit(bmo3[,1],"\\."),"[[",2)->bmo3[,1]
+list()->mylist
+for(i in 1:length(hlaid)){
+bmo3[which(bmo3$ID==hlaid[i]),1]->mylist[[i]]}
+names(mylist)<-hlaid
+
+
+library(UpSetR)
+pdf("UpSetR_prothla_ugly.pdf")
+upset(fromList(mylist), nsets=10,order.by = "freq")
+dev.off()
+
+
+library(UpSetR)
+pdf("UpSetR_prothla_ugly_degree30.pdf")
+upset(fromList(mylist), nsets=30,order.by = "degree")
+dev.off()
+
+vechla<-vector()
+for(i in 1:length(hlaid)){
+nrow(bmo3[which(bmo3$ID==hlaid[i]),])->vechla[i]}
+names(vechla)<-hlaid
+vechla[order(vechla,decreasing=T)]->hlaorder
+
+sapply(strsplit(protid,"\\."),"[[",2)->protid
+vecprot<-vector()
+for(i in 1:length(protid)){
+nrow(bmo3[which(bmo3[,1]==protid[i]),])->vecprot[i]}
+names(vecprot)<-protid
+vecprot[order(vecprot,decreasing=T)]->protorder
+
+
+bmo[grep("kir2",bmo[,1]),]->bmo2
+sapply(strsplit(bmo2$ID,"\\*"),"[[",2)->digit
+bmo2[which(nchar(digit)==2),]->bmo3
+
+
+bmo[grep("gzma",bmo[,1]),]->bmo2
+sapply(strsplit(bmo2$ID,"\\*"),"[[",2)->digit
+bmo2[which(nchar(digit)==2),]->bmo3
