@@ -24,7 +24,7 @@ read.table("/well/todd/users/xnc303/ukbb/olink/pheno_lodna",header=T)->pheno
 read.table("/well/todd/users/xnc303/ukbb/olink/cov3_pc10",header=F)->cov
 
 pheno[,"kir2dl3"]->kir
-unlist(dosage["HLA_C*07:02",])->test0702
-unlist(dosage["HLA_C*07",])->test07
+as.numeric(unlist(dosage["HLA_C*07:02",]))->test0702
+as.numeric(unlist(dosage["HLA_C*07",]))->test07
 cov[,4:ncol(cov)]->cov3
-lm(kir~test07+test0702+V4+V5+V6+V7+V8+V9+V10+V11+V12+V13+V14+V15+V16+V17+V18+V19,data=cov3)->test
+lm(kir~test0702+test07+V4+V5+V6+V7+V8+V9+V10+V11+V12+V13+V14+V15+V16+V17+V18+V19,data=cov3)->test
