@@ -1,0 +1,42 @@
+intersect plot
+
+
+load("/well/todd/users/xnc303/ukbb/disease/DM1/zzz.Rd")
+lmmat->lmmat_t1d
+
+load("/well/todd/users/xnc303/ukbb/disease/RA/zzz.Rd")
+lmmat->lmmat_ra
+
+load("/well/todd/users/xnc303/ukbb/disease/UC/zzz.Rd")
+lmmat->lmmat_uc
+
+load("/well/todd/users/xnc303/ukbb/disease/CD/zzz.Rd")
+lmmat->lmmat_cd
+
+load("/well/todd/users/xnc303/ukbb/disease/MS/zzz.Rd")
+lmmat->lmmat_ms
+
+load("/well/todd/users/xnc303/ukbb/disease/psoriasis/zzz.Rd")
+lmmat->lmmat_psoriasis
+
+read.table("/well/todd/users/xnc303/ukbb/olink/pheno_lodna",header=T)->pheno
+pheno[,3:ncol(pheno)]->pheno2
+colnames(pheno2)->rownames(lmmat_t1d)
+colnames(pheno2)->rownames(lmmat_ra)
+colnames(pheno2)->rownames(lmmat_uc)
+colnames(pheno2)->rownames(lmmat_cd)
+colnames(pheno2)->rownames(lmmat_ms)
+colnames(pheno2)->rownames(lmmat_psoriasis)
+
+rownames(lmmat_t1d[which(lmmat_t1d[,4]<(10^(-8))),])->t1dn
+rownames(lmmat_t1d[which(lmmat_ra[,4]<(10^(-8))),])->ran
+rownames(lmmat_t1d[which(lmmat_uc[,4]<(10^(-8))),])->ucn
+rownames(lmmat_t1d[which(lmmat_cd[,4]<(10^(-8))),])->cdn
+rownames(lmmat_t1d[which(lmmat_ms[,4]<(10^(-8))),])->msn
+rownames(lmmat_t1d[which(lmmat_psoriasis[,4]<(10^(-8))),])->psn
+
+library(UpSetR)
+listInput <- list(T1D = t1dn, RA = ran, UC=ucn, CD=cdn,MS=msn, PS=psn)
+pdf("UpSetR.pdf")
+upset(fromList(listInput), order.by = "freq")
+dev.off()
